@@ -273,7 +273,7 @@ fun MyApplicationApp() {
     ) {
         Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
             Scaffold(
-                name = "Kontroler systemu wentylacyjnego",
+                name = "Kontroler wentylacji",
                 modifier = Modifier.padding(innerPadding)
             )
         }
@@ -459,20 +459,20 @@ fun Scaffold(name: String, modifier: Modifier = Modifier) {
             },
             enabled = connectionState is ConnectionState.Connected
         ) {
-            Text(if (isgear) "wysoki" else "niski")
+            Text(if (isgear) "Wysoki" else "Niski")
         }
         Button(
             onClick = {
                 if (isEngine) {
                     btManager.sendData("6") // Switch to wyłącz
                 } else {
-                    btManager.sendData("7") // Switch to włącz
+                    btManager.sendData("7") // Switch to włączony
                 }
                 isEngine = !isEngine
             },
             enabled = connectionState is ConnectionState.Connected
         ) {
-            Text(if (isgear) "włączony" else "Wyłączony")
+            Text(if (isEngine) "Włączony" else "Wyłączony")
         }
     }
 }
