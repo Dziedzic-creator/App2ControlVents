@@ -437,16 +437,7 @@ fun Scaffold(name: String, modifier: Modifier = Modifier) {
         Spacer(modifier = Modifier.height(8.dp))
         // Button to disconnect safely
 
-        Button(
-            onClick = {
-                btManager.closeConnection()
-                isWentylacja = false
-                isKabina = false
-            },
-            enabled = connectionState is ConnectionState.Connected
-        ) {
-            Text("Rozłącz ")
-        }
+
 
         Button(
             onClick = {
@@ -473,6 +464,16 @@ fun Scaffold(name: String, modifier: Modifier = Modifier) {
             enabled = connectionState is ConnectionState.Connected
         ) {
             Text(if (isEngine) "Włączony" else "Wyłączony")
+        }
+        Button(
+            onClick = {
+                btManager.closeConnection()
+                isWentylacja = false
+                isKabina = false
+            },
+            enabled = connectionState is ConnectionState.Connected
+        ) {
+            Text("Rozłącz ")
         }
     }
 }
