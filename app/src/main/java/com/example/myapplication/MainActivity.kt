@@ -327,7 +327,6 @@ fun Scaffold(name: String, modifier: Modifier = Modifier) {
     var isKabina by remember { mutableStateOf(false) }
     var isgear by remember { mutableStateOf(false) }
     var isEngine by remember { mutableStateOf(false) }
-    var temperature by remember { mutableStateOf("") }
     // 1. Initialize the Bluetooth manager & remember its instance
     val btManager = remember { BluetoothConnectionManager(context) }
 
@@ -349,14 +348,6 @@ fun Scaffold(name: String, modifier: Modifier = Modifier) {
                 isWentylacja = (s1 == '0')
                 isgear = (s2 == '0')
                 isEngine = (s3 == '0')
-                
-                // Extract temperature if present after the 4 state characters
-                if (incomingData.length > 4) {
-                    val tempValue = incomingData.substring(4).trim()
-                    if (tempValue.isNotEmpty()) {
-                        temperature = tempValue
-                    }
-                }
             }
         }
     }
@@ -399,14 +390,6 @@ fun Scaffold(name: String, modifier: Modifier = Modifier) {
             text = "Status: $statusText",
             modifier = Modifier.padding(8.dp)
         )
-
-        if (temperature.isNotEmpty()) {
-            Text(
-                text = "Temperatura: $temperature°C",
-                style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.padding(8.dp)
-            )
-        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -494,7 +477,7 @@ fun Scaffold(name: String, modifier: Modifier = Modifier) {
             },
             enabled = connectionState is ConnectionState.Connected
         ) {
-            Text(if (isEngine) "Włączony" else "Wyłączony")
+            Text(if (isEngine) "Wyłączony" else "Włączony")
         }
         Button(
             onClick = {
