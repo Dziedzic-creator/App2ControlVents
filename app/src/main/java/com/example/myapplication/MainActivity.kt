@@ -55,6 +55,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.material3.MaterialTheme
 class BluetoothConnectionManager(private val context: Context) {
     private val bluetoothManager: BluetoothManager? = try {
         context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
@@ -187,7 +188,7 @@ class BluetoothConnectionManager(private val context: Context) {
                     bytes = inputStream.read(buffer)
                     val message = String(buffer, 0, bytes)
                     // Append incoming data instead of overwriting, so we can handle multi-byte responses
-                    _incomingData.value = (_incomingData.value + message).takeLast(10)
+                    _incomingData.value = (_incomingData.value + message).takeLast(20)
                 } catch (e: IOException) {
                     _connectionState.value = ConnectionState.Error("Connection lost.")
                     closeConnection()
@@ -326,6 +327,7 @@ fun Scaffold(name: String, modifier: Modifier = Modifier) {
     var isKabina by remember { mutableStateOf(false) }
     var isgear by remember { mutableStateOf(false) }
     var isEngine by remember { mutableStateOf(false) }
+    var temperature by remember { mutableStateOf("") }
     // 1. Initialize the Bluetooth manager & remember its instance
     val btManager = remember { BluetoothConnectionManager(context) }
 
@@ -336,20 +338,37 @@ fun Scaffold(name: String, modifier: Modifier = Modifier) {
 
     // Sync UI switches with Arduino state when "?" response is received
     LaunchedEffect(incomingData) {
-        if (incomingData.length >= 2) {
+        if (incomingData.length >= 4) {
             val s0 = incomingData[0] // state (Rack/Kabina)
             val s1 = incomingData[1] // state1 (Wentylacja/Klima)
-            val s2= incomingData[2]
-            val s3 = incomingData[3]
-            if (s0.isDigit() && s1.isDigit()) {
-                // If state == 0, it was Case '0' (kabina in code, user says rack)
+            val s2 = incomingData[2] // VentState
+            val s3 = incomingData[3] // EngineState
+            
+            if (s0.isDigit() && s1.isDigit() && s2.isDigit() && s3.isDigit()) {
                 isKabina = (s0 == '0')
-                // If state1 == 0, it was Case '2' (wentylacja)
                 isWentylacja = (s1 == '0')
+                isgear = (s2 == '0')
+                isEngine = (s3 == '0')
+                
+                // Extract temperature if present after the 4 state characters
+                if (incomingData.length > 4) {
+                    val tempValue = incomingData.substring(4).trim()
+                    if (tempValue.isNotEmpty()) {
+                        temperature = tempValue
+                    }
+                }
             }
-            if (s2.isDigit() && s3.isDigit()){
-                isgear= (s2 =='0')
-                isEngine= (s3 =='0')
+        }
+    }
+
+    // Continuously request data every 0.5 seconds while connected
+    LaunchedEffect(connectionState) {
+        if (connectionState is ConnectionState.Connected) {
+            while (true) {
+                // Ensure buffer is clean before asking for fresh data
+                btManager.clearIncomingData()
+                btManager.sendData("?")
+                delay(500)
             }
         }
     }
@@ -359,6 +378,12 @@ fun Scaffold(name: String, modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Text(
+            text = name,
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+
         // Display current connection status with clear text
         val statusText = when (val state = connectionState) {
             is ConnectionState.Disconnected -> "Rozłączony"
@@ -375,7 +400,13 @@ fun Scaffold(name: String, modifier: Modifier = Modifier) {
             modifier = Modifier.padding(8.dp)
         )
 
-            
+        if (temperature.isNotEmpty()) {
+            Text(
+                text = "Temperatura: $temperature°C",
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.padding(8.dp)
+            )
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
